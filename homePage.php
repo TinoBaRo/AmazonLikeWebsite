@@ -3,6 +3,7 @@
 
 <?php  
 	require("header.php");
+	include("computeRating.php");
 ?>
 	<style>
 	div#pad_left {
@@ -69,7 +70,7 @@
 				}
 				if (!empty($itemname_get) && //if search query not found anywhere in...
 					!preg_match("/{$itemname_get}/i", $itemname) && //the item name
-					!preg_match("/{$itemname_get}/i", $description) && //the item's description
+					//!preg_match("/{$itemname_get}/i", $description) && //the item's description
 					!preg_match("/{$itemname_get}/i", $category)) { //or the item's category...
 					unset($lines[$i]); // <- doesn't require re-indexing!
 				}
@@ -152,6 +153,8 @@
 			}
 		}
 
+		$matching_items = 0;
+		
 		for ($i = 0; $i < $num_items; $i++) 
 		{
 			$datas = explode(":", $lines[$i]); //split the line by colon		
@@ -162,6 +165,16 @@
 			//unset array indices from the filtering earlier -> data in them becomes EMPTY, thus not shown
 			if (!empty($itemid)) 
 			{ 
+				$matching_items += 1;
+				
+				$rating_stars = getRating($itemid);
+				
+				if ($rating_stars > 0) { //calculate rating out of 5 only if necessary
+					$rating_line = ($rating_stars . '</small> out of 5 stars</p>');
+				}
+				else {
+					$rating_line = "Not yet rated";
+				}
 				print 
 				('<div class="col-md-4">
 					<div class="card mb-4 shadow-sm">
@@ -174,6 +187,7 @@
 						<div class="card-body">
 							<p class="card-text">'.$description_short.'</p>
 							<p class="card-text">'.$category.'</p>
+							<p class="card-text"><img src="images/star_full.jpg" style="width: 20px;"/> '.$rating_line.'</p>
 							<div class="d-flex justify-content-between align-items-center">
 								<form method="POST" name="itemPage" action="homePage.php">
 									<div class="btn-group">									
@@ -188,20 +202,15 @@
 						</div>
 					</div>
 				</div>');
-				/*
-				print ('<td><img src="pictures/'.$itemid.'.jpg" style="width: 200px; height: 170px;">
-				<br />
-				'.$itemname.' 
-				<div id="align_right">$'.$price.'</div>
-				<br />
-				'.$description_short.' 
-				<br />
-				'.$category.' 
-				<br />
-				Rating (Stars)
-				<div id="align_right">'.$quantity.' in stock</div>
-				</td>');
-				*/
+			}
+		}
+		//if we found nothing with the given search query
+		if ($matching_items === 0) {
+			if (!empty($itemname_get)) {
+				print ("<h3>No results found for ".$itemname_get.".</h3>");
+			}
+			else if (!empty($filter_get)) {
+				print ("<h3>No items found in ".$filter_get." category.</h3>");
 			}
 		}
 		

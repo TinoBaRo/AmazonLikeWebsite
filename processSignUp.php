@@ -2,6 +2,7 @@
 <!-- This file processes the Sign Up Form (from signUpPage.php), and then does an action --> 
 
 <?php
+	include("salt.php");
 	error_reporting(0);
 
 	$min_pass_length = 6;
@@ -40,8 +41,6 @@
 
 	fclose($myfile);
 
-	//print_r($lineContents);
-
 	// READ
 	for ($i=0; $i < $length; $i++) 
 	{ 
@@ -56,6 +55,8 @@
 			// echo "The user has logged in before.";
 			$loggedBefore = true;
 		}
+		
+		$lastId = $line[0]; //will give lastId the ID number of the newest user in table
 	}
 
 	// SIGN-UP CASE
@@ -68,21 +69,27 @@
 		$pass_has_letter = false;
 		$pass_has_digit  = false;
 		
-		if (strlen($userPass) >= $min_pass_length) {
+		if (strlen($userPass) >= $min_pass_length) 
+		{
 			$pass_long_enough = true;
 		}
 		
 		//make sure pass has >= 1 letter and >= 1 digit
-		for ($i = 0; $i < strlen($userPass); $i++) {
-			if ($pass_has_letter === false && ctype_alpha($userPass[$i])) {
+		for ($i = 0; $i < strlen($userPass); $i++) 
+		{
+			if ($pass_has_letter === false && ctype_alpha($userPass[$i])) 
+			{
 				$pass_has_letter = true;
 			}
-			if ($pass_has_digit === false && ctype_digit($userPass[$i])) {
+			if ($pass_has_digit === false && ctype_digit($userPass[$i])) 
+			{
 				$pass_has_digit = true;
 			}
 		}
 		
-		if ($pass_long_enough === false || $pass_has_letter === false || $pass_has_digit === false) {
+
+		if ($pass_long_enough === false || $pass_has_letter === false || $pass_has_digit === false) 
+		{
 			//prompt new user password doesn't meet requirements
 			if ($pass_long_enough === false) {
 				$_SESSION['signUpErrorMsg'] .= "Password must contain at least ".$min_pass_length." characters.<br />";
@@ -113,21 +120,28 @@
 			
 			require("signUpPage.php");
 		}
-		else {			
+		else 
+		{			
 			//write to the file, welcome message, and Search
 			echo "<div align=\"right\">";
 			echo "<h4> Welcome " . $userName . "</h4>";
 			echo "</div>";
 
 			require("homePage.php");
-
-			// write it to: myFile = loginData.txt
+			
+			// encrypt password, then write it into DB:
+			//print ("salt: ".$salt."<br />");
+			$userPass = crypt($userPass, '$2y$07$'.$salt.'$');
+			//print ("encrypted pass: ".$userPass."<br />");
+			
+			// write it to: myFile = database/users.txt
 			$myfile = fopen("loginData.txt", "a"); // "a" is mode append \\ "w" is mode write \\ "r" is mode read
-			$text = ($length) . ":" . $userName . ":" . $userPass . ":" . $firstName . ":" . $lastName . ":" . $address . ":" . $email . PHP_EOL;
+			$text = ($lastId+1) . ":" . $userName . ":" . $userPass . ":" . $firstName . ":" . $lastName . ":" . $address . ":" . $email . PHP_EOL;
 			fwrite($myfile, $text);
 			fclose($myfile);			
 		}
 	}
+
 
 	// if the user is found in the database (loggedBefore is true): the user name already exists
 	if($loggedBefore == true)
